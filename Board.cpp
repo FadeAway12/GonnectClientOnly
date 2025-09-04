@@ -173,9 +173,12 @@ int Board::ind(int row, int col) const {
 	return row * size + col;
 }
 
-void Board::removeIsolated() {
+void Board::removeIsolated(Stone color) {
 	std::set<int> groupIDs = manager.getIsolated(*this);
 	for (int id : groupIDs) {
+		if (manager.getColor(id) != color) {
+			continue;
+		}
 		removeGroupMembers(id);
 		manager.removeGroup(id);
 	}
@@ -189,7 +192,7 @@ void Board::removeGroupMembers(int id) {	// helper for removeIsolated
 }
 //pub:
 Board::Board(int s) :
-	size(s), board(s* s, Stone::Empty), prev(s*s, Stone::Empty) {}
+	size(s), board(s* s, Stone::Empty), prev(s* s, Stone::Empty) {}
 
 Board::Board(const Board& other) {
 	size = other.size;
@@ -212,12 +215,16 @@ void Board::setColor(int row, int col, Stone color) { // note: in gonnect, suici
 	prev = board;
 	int i{ ind(row, col) };
 	if (hasStone(i)) {
-		std::cerr << "occupied";
+		//std::cerr << "occupied";
 		return;
 	}
 	board[i] = color;
 	manager.addStone(color, i, *this);
-	removeIsolated();
+	Stone opp{};
+	if (color == Stone::White) opp = Stone::Black;
+	else opp = Stone::White;
+	removeIsolated(opp);
+	removeIsolated(color);
 }
 
 bool Board::hasStone(int ind) const {
@@ -258,10 +265,10 @@ bool Board::isConnected(Stone color) const { // BFS algo to check if a certain c
 	}
 	while (!startIndices.empty()) {
 		int ind = startIndices.front();
-		
+
 		if (ind / size == size - 1) return true;
 		startIndices.pop();
-		
+
 
 		std::set<int> neighbors = getNeighbors(ind);
 		for (int n : neighbors) {
@@ -276,7 +283,7 @@ bool Board::isConnected(Stone color) const { // BFS algo to check if a certain c
 	startIndices = std::queue<int>{};
 	visited.clear();
 
-	for (int i = 0; i < size*size; i+=size) {
+	for (int i = 0; i < size * size; i += size) {
 		if (getStone(i) == color) {
 			startIndices.push(i);
 			visited.insert(i);
@@ -309,6 +316,13 @@ bool Board::violatesKo(int row, int col, Stone color) const {
 	return newBoard.board == prev;
 }
 
+bool Board::isLegal(int row, int col, Stone color) const {
+	if (row >= size || col >= size || row < 0 || col < 0) return false;
+	if (hasStone(ind(row, col))) return false;
+	if (violatesKo(row, col, color)) return false;
+	return true;
+}
+
 void Board::printBoard() const {
 	for (int i = 0; i < size; i++) {
 		for (int j = 0; j < size; j++) {
@@ -324,12 +338,12 @@ void Board::printBoard() const {
 void Board::prettyPrintBoard() const {
 	std::cout << "   ";
 	for (int col = 0; col < size; ++col) {
-		std::cout << col%10 << " ";
+		std::cout << col % 10 << " ";
 	}
 	std::cout << "\n";
 
 	for (int row = 0; row < size; ++row) {
-		std::cout << row%10 << " |";
+		std::cout << row % 10 << " |";
 		for (int col = 0; col < size; ++col) {
 			int idx = ind(row, col);
 			char stoneChar = ' ';
@@ -357,7 +371,70 @@ void Board::printState() const {
 	std::cout << "\n";
 }
 
+void Board::play() {
+	prettyPrintBoard();
+	std::cout << "White or black: (W or B)" << "\n";
+	char c{};
+	int counter{};
+	std::cin >> c;
+	while (c != 'W' && c != 'B') {
+		std::cout << "Please input a valid choice" << "\n";
+		std::cin >> c;
+	}
+	while (!isConnected(Stone::White) && !isConnected(Stone::Black)) {
+		if (counter % 2 == 0) { // black turn
+			if (c == 'B') {
+				std::cout << "Your move: ";
+				int row{}, col{};
+				std::cin >> row >> col;
+				std::cout << "\n";
+				while (!isLegal(row, col, Stone::Black)) {
+					std::cout << "Illegal, redo" << "\n";
+					std::cin >> row >> col;
+					std::cout << "\n";
+				}
+				setColor(row, col, Stone::Black);
+				
+			}
+			else {
+				int ind = bestMove(Stone::Black);
+				if (ind == -1) {
+					std::cout << "Black passes" << "\n";
+					continue;
+				}
+				setColor(ind / size, ind % size, Stone::Black);
+			}
+		}
+		else {
+			if (c == 'W') {
+				std::cout << "Your move: ";
+				int row{}, col{};
+				std::cin >> row >> col;
+				std::cout << "\n";
+				while (!isLegal(row, col, Stone::White)) {
+					std::cout << "Illegal, redo" << "\n";
+					std::cin >> row >> col;
+					std::cout << "\n";
+				}
+				setColor(row, col, Stone::White);
 
+			}
+			else {
+				int ind = bestMove(Stone::White);
+				if (ind == -1) {
+					std::cout << "Black passes" << "\n";
+					continue;
+				}
+				setColor(ind / size, ind % size, Stone::White);
+			}
+		}
+		
+		prettyPrintBoard();
+		counter++;
+	}
+	std::cout << "GAME IS OVER" << "\n";
+	prettyPrintBoard();
+}
 
 int main() {
 	std::cout << "hi" << '\n';
@@ -370,6 +447,9 @@ int main() {
 	b.printState();
 	b.setColor(2, 1, Stone::Black);
 	b.printState();
+
+	Board c{ 5 };
+	c.play();
 
 	return 0;
 }

@@ -52,7 +52,11 @@ private:
 
 	int ind(int row, int col) const;
 	void removeIsolated();
+	void removeIsolated(Stone color);
 	void removeGroupMembers(int id);
+
+	//private: search helper
+	int bestMove(Stone color, int depth) const; // returns SCORE
 
 public:
 	Board(int s);
@@ -66,9 +70,14 @@ public:
 	std::set<int> getNeighbors(int ind) const;
 	bool isConnected(Stone color) const;
 	bool violatesKo(int row, int col, Stone color) const;
+	bool isLegal(int row, int col, Stone color) const;
+
+	// test functions
+
 	void printBoard() const;
 	void prettyPrintBoard() const;
 	void printState() const;
+	void play();
 
 	// our evaluation functions
 
@@ -83,5 +92,5 @@ public:
 
 	//our search
 
-	int bestMove(Stone color) const;
+	int bestMove(Stone color) const; // returns MOVE IND
 };
