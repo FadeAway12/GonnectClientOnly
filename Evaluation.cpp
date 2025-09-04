@@ -10,12 +10,22 @@
 
 #include "Board.h"
 
-int Board::evaluate() const {
+int Board::evaluate() const { // white = pos, black = neg
 	return victoryStatus() +
 		(numLiberties(Stone::White)-numLiberties(Stone::Black)) * 3 + 
 		(numAdjacent(Stone::White)-numAdjacent(Stone::Black)) + 
 		(largestGroup(Stone::White)-largestGroup(Stone::Black)) * 2 +
 		pieceDiff() * 2 + centerControl();
+}
+
+int Board::evaluateFor(Stone color) const { 
+	int score = victoryStatus() +
+		(numLiberties(Stone::White) - numLiberties(Stone::Black)) * 3 +
+		(numAdjacent(Stone::White) - numAdjacent(Stone::Black)) +
+		(largestGroup(Stone::White) - largestGroup(Stone::Black)) * 2 +
+		pieceDiff() * 2 + centerControl();;
+	if (color == Stone::Black) score *= -1;
+	return score;
 }
 
 int Board::victoryStatus() const {

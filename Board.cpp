@@ -302,6 +302,7 @@ bool Board::isConnected(Stone color) const { // BFS algo to check if a certain c
 	return false;
 }
 
+
 bool Board::violatesKo(int row, int col, Stone color) const {
 	Board newBoard = Board(*this);
 	newBoard.setColor(row, col, color);
@@ -355,6 +356,8 @@ void Board::printState() const {
 	}
 	std::cout << "\n";
 }
+
+
 
 int main() {
 	std::cout << "hi" << '\n';

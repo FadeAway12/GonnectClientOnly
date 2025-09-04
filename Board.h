@@ -38,7 +38,7 @@ public:
 	const Group& getGroup(int id) const;
 	int find(int a) const;
 	std::set<int> getIsolated(const Board& board) const;
-	
+
 	const std::map<int, Group> getMap() const; // TEST ONLY
 
 };
@@ -73,10 +73,15 @@ public:
 	// our evaluation functions
 
 	int evaluate() const;
+	int evaluateFor(Stone color) const;
 	int victoryStatus() const;
 	int numLiberties(Stone color) const;
 	int numAdjacent(Stone color) const;
 	int largestGroup(Stone color) const;
 	int pieceDiff() const;
 	int centerControl() const;
+
+	//our search
+
+	int bestMove(Stone color) const;
 };
