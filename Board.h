@@ -1,5 +1,7 @@
 #pragma once
 
+#include "crow.h"
+
 #include <iostream>
 #include <vector>
 #include <set>
@@ -45,7 +47,8 @@ public:
 
 class Board {
 private:
-	int size;
+	int size; // board is size x size, fyi. not total num of cels. squarical board
+	int counter;
 	std::vector<Stone> board;
 	std::vector<Stone> prev; // more efficient ways for ko rule, but this is easy
 	GroupManager manager;
@@ -93,4 +96,14 @@ public:
 	//our search
 
 	int bestMove(Stone color) const; // returns MOVE IND
+
+	// to json
+
+	crow::json::wvalue boardJson() const; //returns board as json
+
+	// help from json
+
+	void setBoard(crow::json::rvalue board);
+	//void setColor(crow::json::rvalue ind, crow::json::rvalue color);
+	crow::json::wvalue bestMoveJson(Stone player) const;
 };

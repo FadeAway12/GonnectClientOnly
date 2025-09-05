@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Vikra\source\repos\Gonnect\Project1\build\CMakeFiles\e383e9aab548f529023913d540c95365\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{9CF11ABD-BBA1-31A2-A613-0CCAFF729E6C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

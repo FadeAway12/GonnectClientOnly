@@ -192,10 +192,11 @@ void Board::removeGroupMembers(int id) {	// helper for removeIsolated
 }
 //pub:
 Board::Board(int s) :
-	size(s), board(s* s, Stone::Empty), prev(s* s, Stone::Empty) {}
+	size(s), counter(0), board(s* s, Stone::Empty), prev(s* s, Stone::Empty) {}
 
 Board::Board(const Board& other) {
 	size = other.size;
+	counter = 0;
 	board = other.board;
 	manager = other.manager;
 	prev = other.prev;
@@ -204,6 +205,7 @@ Board::Board(const Board& other) {
 Board& Board::operator=(const Board& other) { // copy assignment
 	if (this != &other) {
 		size = other.size;
+		counter = other.counter;
 		board = other.board;
 		manager = other.manager;
 		prev = other.prev;
@@ -225,6 +227,7 @@ void Board::setColor(int row, int col, Stone color) { // note: in gonnect, suici
 	else opp = Stone::White;
 	removeIsolated(opp);
 	removeIsolated(color);
+	counter++;
 }
 
 bool Board::hasStone(int ind) const {
@@ -436,6 +439,7 @@ void Board::play() {
 	prettyPrintBoard();
 }
 
+/*
 int main() {
 	std::cout << "hi" << '\n';
 	std::map<int, Group> groups;
@@ -449,7 +453,15 @@ int main() {
 	b.printState();
 
 	Board c{ 5 };
+	c.setColor(0, 0, Stone::Black);
+	c.setColor(4, 4, Stone::White);
+	c.setColor(0, 1, Stone::Black);
+	c.setColor(1, 0, Stone::Black);
+	c.setColor(1, 1, Stone::White);
+	c.printState();
+	c.setColor(2, 0, Stone::Black);
+	c.printState();
 	c.play();
 
 	return 0;
-}
+}*/
