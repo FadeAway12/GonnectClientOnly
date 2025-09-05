@@ -61,7 +61,8 @@
     "cstdint": "cpp",
     "iostream": "cpp",
     "vector": "cpp",
-    "xlocale": "cpp"
+    "xlocale": "cpp",
+    "map": "cpp"
   },
   "cmake.sourceDirectory": "C:/Users/Vikra/Documents/Visual Studio 2022/Gonnect Website/server"
 }
