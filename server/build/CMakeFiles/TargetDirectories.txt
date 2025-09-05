@@ -1,0 +1,3 @@
+C:/Users/Vikra/Documents/Visual Studio 2022/Gonnect Website/server/build/CMakeFiles/Project1.dir
+C:/Users/Vikra/Documents/Visual Studio 2022/Gonnect Website/server/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/Vikra/Documents/Visual Studio 2022/Gonnect Website/server/build/CMakeFiles/ZERO_CHECK.dir
