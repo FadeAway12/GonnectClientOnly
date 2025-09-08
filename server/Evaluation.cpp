@@ -10,89 +10,118 @@
 
 #include "Board.h"
 
-int Board::evaluate() const { // white = pos, black = neg
+int Board::evaluate() const
+{ // white = pos, black = neg
 	return victoryStatus() +
-		(numLiberties(Stone::White)-numLiberties(Stone::Black)) * 3 + 
-		(numAdjacent(Stone::White)-numAdjacent(Stone::Black)) + 
-		(largestGroup(Stone::White)-largestGroup(Stone::Black)) * 2 +
-		pieceDiff() * 2 + centerControl();
+		   (numLiberties(Stone::White) - numLiberties(Stone::Black)) * 3 +
+		   (numAdjacent(Stone::White) - numAdjacent(Stone::Black)) +
+		   (largestGroup(Stone::White) - largestGroup(Stone::Black)) * 2 +
+		   pieceDiff() * 2 + centerControl();
 }
 
-int Board::evaluateFor(Stone color) const { 
+int Board::evaluateFor(Stone color) const
+{
 	int score = victoryStatus() +
-		(numLiberties(Stone::White) - numLiberties(Stone::Black)) * 3 +
-		(numAdjacent(Stone::White) - numAdjacent(Stone::Black)) +
-		(largestGroup(Stone::White) - largestGroup(Stone::Black)) * 2 +
-		pieceDiff() * 2 + centerControl();;
-	if (color == Stone::Black) score *= -1;
+				(numLiberties(Stone::White) - numLiberties(Stone::Black)) * 3 +
+				(numAdjacent(Stone::White) - numAdjacent(Stone::Black)) +
+				(largestGroup(Stone::White) - largestGroup(Stone::Black)) * 2 +
+				pieceDiff() * 2 + centerControl();
+	;
+	if (color == Stone::Black)
+		score *= -1;
 	return score;
 }
 
-int Board::victoryStatus() const {
-	if (isConnected(Stone::Black)) {
+int Board::victoryStatus() const
+{
+	if (isConnected(Stone::Black))
+	{
 		return -100000;
 	}
-	else if (isConnected(Stone::White)) {
+	else if (isConnected(Stone::White))
+	{
 		return 100000;
 	}
 	return 0;
 }
 
-int Board::numLiberties(Stone color) const {
+int Board::numLiberties(Stone color) const
+{
 	std::set<int> libs{};
-	for (int ind = 0; ind < size * size; ind++) {
-		if (getStone(ind) != color) continue;
-		for (int n : getNeighbors(ind)) {
-			if (!hasStone(n)) libs.insert(n);
+	for (int ind = 0; ind < size * size; ind++)
+	{
+		if (getStone(ind) != color)
+			continue;
+		for (int n : getNeighbors(ind))
+		{
+			if (!hasStone(n))
+				libs.insert(n);
 		}
 	}
 	return libs.size();
 }
 
-int Board::numAdjacent(Stone color) const { //friendly or empty
+int Board::numAdjacent(Stone color) const
+{ // friendly or empty
 	int cnt{};
-	for (int ind = 0; ind < size * size; ind++) {
-		if (getStone(ind) != color) continue;
-		for (int n : getNeighbors(ind)) {
-			if (!hasStone(n) || getStone(n) == color) cnt++;
+	for (int ind = 0; ind < size * size; ind++)
+	{
+		if (getStone(ind) != color)
+			continue;
+		for (int n : getNeighbors(ind))
+		{
+			if (!hasStone(n) || getStone(n) == color)
+				cnt++;
 		}
 	}
 	return cnt;
 }
 
-int Board::largestGroup(Stone color) const {
+int Board::largestGroup(Stone color) const
+{
 	std::map<int, Group> map = getGroups();
 	int sz{};
-	for (auto& pair : map) {
+	for (auto &pair : map)
+	{
 		int newSize = pair.second.stones.size();
-		if (newSize > sz && pair.second.color == color) sz = newSize;
+		if (newSize > sz && pair.second.color == color)
+			sz = newSize;
 	}
 	return sz;
 }
 
-int Board::pieceDiff() const {
+int Board::pieceDiff() const
+{
 	int diff{};
-	for (int i = 0; i < board.size(); i++) {
-		if (board[i] == Stone::White) diff++;
-		else if (board[i] == Stone::Black) diff--;
+	for (int i = 0; i < board.size(); i++)
+	{
+		if (board[i] == Stone::White)
+			diff++;
+		else if (board[i] == Stone::Black)
+			diff--;
 	}
 	return diff;
 }
 
-int Board::centerControl() const {
+int Board::centerControl() const
+{
 	int diff{};
-	for (int row = size/4; row < 3*size/4; row++) {
-		for (int col = size / 4; col < 3 * size / 4; col++) {
+	for (int row = size / 4; row < 3 * size / 4; row++)
+	{
+		for (int col = size / 4; col < 3 * size / 4; col++)
+		{
 			int i = ind(row, col);
-			if (board[i] == Stone::White) {
-				diff += (1.0 / (abs(size / 2.0-row)+abs(size/2.0-col)))*3;
+			if (board[i] == Stone::White)
+			{
+				diff += (1.0 / (abs(size / 2.0 - row) + abs(size / 2.0 - col))) * 3;
 			}
-			else if (board[i] == Stone::Black) {
-				diff -= (1.0 / (abs(size / 2.0 - row) + abs(size / 2.0 - col)))*3;
+			else if (board[i] == Stone::Black)
+			{
+				diff -= (1.0 / (abs(size / 2.0 - row) + abs(size / 2.0 - col))) * 3;
 			}
 		}
 	}
 	return diff;
 }
 
-//center control
+// center control

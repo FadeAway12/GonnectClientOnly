@@ -1,6 +1,5 @@
 import logo from './logo.svg';
 import './App.css';
-import Landing from './pages/landing.jsx'
 import Gonnect from './pages/gonnect.jsx'
 
 function App() {

@@ -6,11 +6,20 @@ import {getBoard} from "../api/getBoard.js"
 import {setBoard} from "../api/setBoard.js"
 import {setColor} from "../api/setColor.js"
 import { getBestMove } from '../api/getBestMove.js';
+import { isConnected } from '../api/getIsConnected.js';
+
+const BLACK = 2;
+const WHITE = 1;
+
+
+function isAITurn(aiCol, blackIsNext) {
+  return (aiCol === BLACK && blackIsNext) || (aiCol === WHITE && !blackIsNext);
+}
 
 function Square({ value, onClick }) {
   let src = null;
-  if (value === 1) src = blackStone;
-  if (value === 2) src = whiteStone;
+  if (value === BLACK) src = blackStone;
+  if (value === WHITE) src = whiteStone;
 
   return (
     <button className="square" onClick={onClick}>
@@ -30,7 +39,7 @@ function Square({ value, onClick }) {
   );
 }
 
-function Board({ size, aiColor }) {
+function Board({ size, aiColor, setGameEnded }) {
   const [squares, setSquares] = useState(Array(size * size).fill(0));
   const [blackIsNext, setBlackIsNext] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -55,54 +64,59 @@ useEffect(() => {
     });
 }, []);
 
+useEffect(() => {
+  if (!loading && isAITurn(aiColor, blackIsNext)) {
+    handleAI();
+  }
+}, [loading, blackIsNext, aiColor]);
+
+useEffect(() => {
+  let alive = true;
+  (async () => {
+    try {
+      const winner = await isConnected();
+      if (!alive) return;
+      if (winner === BLACK) setGameEnded(1);
+      else if (winner === WHITE) setGameEnded(2);
+    } catch (err) {
+      console.error("Failed to check game end:", err);
+    }
+  })();
+  return () => { alive = false; };
+}, [squares, blackIsNext]);
+
+
 async function handleClick(i) {
-  if (squares[i]) return;
-
-  const next = [...squares];
-  next[i] = blackIsNext ? 1 : 2;
-
-  setBlackIsNext(!blackIsNext);
+  if (squares[i] || isAITurn(aiColor, blackIsNext)) return;
+  const moveColor = blackIsNext ? BLACK : WHITE;
 
   try {
-    await setColor(i, next[i]); 
-    const data = await getBoard(); 
-    const flatBoard = data.board.flat();
-    const parsedBoard = flatBoard.map(x => {
-      if (x === 0) return 0;
-      if (x === 1) return 1;
-      if (x === 2) return 2;
-      return null;
-    });
-    setSquares(parsedBoard); 
+    await setColor(i, moveColor); 
+    const data = await getBoard();  
+    const parsed = data.board.flat().map(Number);
+    setSquares(parsed);
+    setBlackIsNext(prev => !prev);
   } catch (err) {
     console.error("failed to update board", err);
   }
 }
+
 
 async function handleAI() {
-
-  const i = await getBestMove(aiColor).bestMove;
-
-  const next = [...squares];
-  next[i] = blackIsNext ? 1 : 2;
-
-  setBlackIsNext(!blackIsNext);
+  if (!isAITurn(aiColor, blackIsNext)) return;
 
   try {
-    await setColor(i, next[i]); 
-    const data = await getBoard(); 
-    const flatBoard = data.board.flat();
-    const parsedBoard = flatBoard.map(x => {
-      if (x === 0) return 0;
-      if (x === 1) return 1;
-      if (x === 2) return 2;
-      return null;
-    });
-    setSquares(parsedBoard); 
+    const { bestMove: i } = await getBestMove(aiColor);
+    await setColor(i, aiColor);   
+    const data = await getBoard();
+    const parsed = data.board.flat().map(Number);
+    setSquares(parsed);
+    setBlackIsNext(prev => !prev); // precevnt race cond
   } catch (err) {
     console.error("failed to update board", err);
   }
 }
+
 
   const rows = [];
   for (let row = 0; row < size; row++) {
@@ -122,7 +136,10 @@ async function handleAI() {
 
   return (
     <div className="board">
-      <h3>Next player: {blackIsNext ? "Black" : "White"}</h3>
+      <h3>
+        Next player: {blackIsNext ? "Black" : "White"}
+        {isAITurn(aiColor, blackIsNext) ? " (...thinking)" : ""}
+      </h3>
       {rows}
     </div>
   );
@@ -131,19 +148,20 @@ async function handleAI() {
 export default function Game() {
   const [gameStarted, setGameStarted] = useState(false);
   const [size, setSize] = useState(3);
-  const [playerCol, setPlayerCol] = useState(false); //false is black
+  const [playerCol, setPlayerCol] = useState(false); //false is whiete, true is black
+  const [gameEnded, setGameEnded] = useState(0); // 0 is ongoing, 1 is black win, 2 is white win
 
   if (!gameStarted) {
     return (
       <div style={{ padding: 20 }}>
         <h2>Welcome to Gonnect!</h2>
         <label>
-          Board size (2-19):&nbsp;
+          Board size (3-19):&nbsp;
           <input
             type="number"
             value={size}
             onChange={(e) => setSize(parseInt(e.target.value) || 3)}
-            min={2}
+            min={3}
             max={19}
           />
         </label>
@@ -152,7 +170,7 @@ export default function Game() {
           Be Black?&nbsp;
           <input
             type="checkbox"
-            checked = {!playerCol}
+            checked = {playerCol}
             onChange={(e) => setPlayerCol(!playerCol)}
           />
         </label>
@@ -165,12 +183,27 @@ export default function Game() {
     );
   }
 
+  if (gameEnded == BLACK) {
+    return <p>BLACK WON</p>;
+  }
+
+  else if (gameEnded == WHITE) {
+    return <p>WHITE WON</p>;
+  }
+
+  // if player is black, ai is white (2)
   return <div>
-    <Board size={size} aiColor = {playerCol ? 1 : 2}/>
+    <Board size={size} aiColor = {playerCol ? WHITE : BLACK} setGameEnded={setGameEnded}/> 
     <br></br>
-    <button onClick = {() => {
-      setGameStarted(false);
-    }}>Go Back</button>
+    <button
+      onClick={async () => {
+      await setBoard(Array(size * size).fill(0));
+      setGameStarted(false);       
+    }}
+    >
+    Go Back
+    </button>
+
   </div>
   
 }

@@ -8,24 +8,31 @@
 #include <map>
 #include <cstdint>
 
-enum Stone : uint8_t { Empty = 0, White = 1, Black = 2 };
+enum Stone : uint8_t
+{
+	Empty = 0,
+	White = 1,
+	Black = 2
+};
 
 class Board;
 class GroupManager;
 
-struct Group {
+struct Group
+{
 	int id;
 	std::set<int> stones;
 	Stone color;
 
-	Group(int id, const std::set<int>& stones, Stone color);
+	Group(int id, const std::set<int> &stones, Stone color);
 	Group();
-	std::set<int> liberties(const Board& board) const;
-	std::set<int> antiLiberties(const Board& board) const;
-	std::set<int> friends(const Board& board) const;
+	std::set<int> liberties(const Board &board) const;
+	std::set<int> antiLiberties(const Board &board) const;
+	std::set<int> friends(const Board &board) const;
 };
 
-class GroupManager {
+class GroupManager
+{
 private:
 	std::map<int, Group> groups;
 	int counter;
@@ -33,19 +40,19 @@ private:
 
 public:
 	GroupManager();
-	GroupManager(const GroupManager& manager);
-	void addStone(Stone s, int ind, Board& board);
+	GroupManager(const GroupManager &manager);
+	void addStone(Stone s, int ind, Board &board);
 	void removeGroup(int id);
 	Stone getColor(int id) const;
-	const Group& getGroup(int id) const;
+	const Group &getGroup(int id) const;
 	int find(int a) const;
-	std::set<int> getIsolated(const Board& board) const;
+	std::set<int> getIsolated(const Board &board) const;
 
 	const std::map<int, Group> getMap() const; // TEST ONLY
-
 };
 
-class Board {
+class Board
+{
 private:
 	int size; // board is size x size, fyi. not total num of cels. squarical board
 	int counter;
@@ -58,13 +65,13 @@ private:
 	void removeIsolated(Stone color);
 	void removeGroupMembers(int id);
 
-	//private: search helper
+	// private: search helper
 	int bestMove(Stone color, int depth) const; // returns SCORE
 
 public:
 	Board(int s);
-	Board(const Board& other);
-	Board& operator=(const Board& other);
+	Board(const Board &other);
+	Board &operator=(const Board &other);
 	void setColor(int row, int col, Stone color);
 	bool hasStone(int ind) const;
 	Stone getStone(int ind) const;
@@ -93,17 +100,18 @@ public:
 	int pieceDiff() const;
 	int centerControl() const;
 
-	//our search
+	// our search
 
 	int bestMove(Stone color) const; // returns MOVE IND
 
 	// to json
 
-	crow::json::wvalue boardJson() const; //returns board as json
+	crow::json::wvalue boardJson() const; // returns board as json
 
 	// help from json
 
 	void setBoard(crow::json::rvalue board);
-	//void setColor(crow::json::rvalue ind, crow::json::rvalue color);
+	// void setColor(crow::json::rvalue ind, crow::json::rvalue color);
 	crow::json::wvalue bestMoveJson(Stone player) const;
+	crow::json::wvalue isConnectedJson() const;
 };
