@@ -48,7 +48,7 @@ public:
 	int find(int a) const;
 	std::set<int> getIsolated(const Board &board) const;
 
-	const std::map<int, Group> getMap() const; // TEST ONLY
+	const std::map<int, Group> &getMap() const; // TEST ONLY
 };
 
 class Board
@@ -76,7 +76,7 @@ public:
 	bool hasStone(int ind) const;
 	Stone getStone(int ind) const;
 	int getSize() const;
-	const std::map<int, Group> getGroups() const; // test method
+	const std::map<int, Group> &getGroups() const; // test method
 	std::set<int> getNeighbors(int ind) const;
 	bool isConnected(Stone color) const;
 	bool violatesKo(int row, int col, Stone color) const;

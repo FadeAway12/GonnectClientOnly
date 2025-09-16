@@ -189,7 +189,7 @@ std::set<int> GroupManager::getIsolated(const Board &board) const
 	return mySet;
 }
 
-const std::map<int, Group> GroupManager::getMap() const
+const std::map<int, Group> &GroupManager::getMap() const
 {
 	return groups;
 }
@@ -231,7 +231,7 @@ Board::Board(int s) : size(s), counter(0), board(s * s, Stone::Empty), prev(s * 
 Board::Board(const Board &other)
 {
 	size = other.size;
-	counter = 0;
+	counter = other.counter;
 	board = other.board;
 	manager = other.manager;
 	prev = other.prev;
@@ -300,7 +300,7 @@ std::set<int> Board::getNeighbors(int ind) const
 	return neighbors;
 }
 
-const std::map<int, Group> Board::getGroups() const
+const std::map<int, Group> &Board::getGroups() const
 {
 	return manager.getMap();
 }
@@ -511,7 +511,7 @@ void Board::play()
 				int ind = bestMove(Stone::White);
 				if (ind == -1)
 				{
-					std::cout << "Black passes" << "\n";
+					std::cout << "White passes" << "\n";
 					continue;
 				}
 				setColor(ind / size, ind % size, Stone::White);
