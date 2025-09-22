@@ -2,15 +2,9 @@ import { useEffect, useState } from 'react'
 import blackStone from "../assets/black.png";
 import whiteStone from "../assets/white.jpg";
 
-import {getBoard} from "../api/getBoard.js"
-import {setBoard} from "../api/setBoard.js"
-import {setColor} from "../api/setColor.js"
-import { getBestMove } from '../api/getBestMove.js';
-import { isConnected } from '../api/getIsConnected.js';
+import { getBoard, setBoard, setColor, getBestMove, isConnected, reset, CONST } from '../engine/localEngine.js';
 
-const BLACK = 2;
-const WHITE = 1;
-
+const { BLACK, WHITE } = CONST;
 
 function isAITurn(aiCol, blackIsNext) {
   return (aiCol === BLACK && blackIsNext) || (aiCol === WHITE && !blackIsNext);
@@ -44,79 +38,76 @@ function Board({ size, aiColor, setGameEnded }) {
   const [blackIsNext, setBlackIsNext] = useState(true);
   const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-  getBoard()
-    .then(data => {
+  useEffect(() => {
+    getBoard().then(data => {
       const flatBoard = data.board.flat();
       const parsedBoard = flatBoard.map(x => {
         if (x === 0) return 0;
         if (x === 1) return 1; 
         if (x === 2) return 2;
-        return null;
+        return 0;
       });
-      getBoard().then(data => console.log("Board received:", data))
       setSquares(parsedBoard);
+      // keep local turn in sync with engine
+      setBlackIsNext(data.player === BLACK);
       setLoading(false);
-    })
-    .catch(err => {
+    }).catch(err => {
       console.error('Failed to fetch board:', err);
       setLoading(false);
     });
-}, []);
+  }, []);
 
-useEffect(() => {
-  if (!loading && isAITurn(aiColor, blackIsNext)) {
-    handleAI();
-  }
-}, [loading, blackIsNext, aiColor]);
-
-useEffect(() => {
-  let alive = true;
-  (async () => {
-    try {
-      const winner = await isConnected();
-      if (!alive) return;
-      if (winner === BLACK) setGameEnded(1);
-      else if (winner === WHITE) setGameEnded(2);
-    } catch (err) {
-      console.error("Failed to check game end:", err);
+  useEffect(() => {
+    if (!loading && isAITurn(aiColor, blackIsNext)) {
+      handleAI();
     }
-  })();
-  return () => { alive = false; };
-}, [squares, blackIsNext]);
+  }, [loading, blackIsNext, aiColor]); 
 
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const winner = await isConnected();
+        if (!alive) return;
+        if (winner === BLACK) setGameEnded(BLACK);
+        else if (winner === WHITE) setGameEnded(WHITE);
+      } catch (err) {
+        console.error("Failed to check game end:", err);
+      }
+    })();
+    return () => { alive = false; };
+  }, [squares, blackIsNext]); // eslint-disable-line react-hooks/exhaustive-deps
 
-async function handleClick(i) {
-  if (squares[i] || isAITurn(aiColor, blackIsNext)) return;
-  const moveColor = blackIsNext ? BLACK : WHITE;
+  async function handleClick(i) {
+    if (squares[i] !== 0 || isAITurn(aiColor, blackIsNext)) return;
+    const moveColor = blackIsNext ? BLACK : WHITE;
 
-  try {
-    await setColor(i, moveColor); 
-    const data = await getBoard();  
-    const parsed = data.board.flat().map(Number);
-    setSquares(parsed);
-    setBlackIsNext(prev => !prev);
-  } catch (err) {
-    console.error("failed to update board", err);
+    try {
+      await setColor(i, moveColor); 
+      const data = await getBoard();  
+      const parsed = data.board.flat().map(Number);
+      setSquares(parsed);
+      setBlackIsNext(prev => !prev);
+    } catch (err) {
+      console.error("failed to update board", err);
+    }
   }
-}
 
+  async function handleAI() {
+    if (!isAITurn(aiColor, blackIsNext)) return;
 
-async function handleAI() {
-  if (!isAITurn(aiColor, blackIsNext)) return;
-
-  try {
-    const { bestMove: i } = await getBestMove(aiColor);
-    await setColor(i, aiColor);   
-    const data = await getBoard();
-    const parsed = data.board.flat().map(Number);
-    setSquares(parsed);
-    setBlackIsNext(prev => !prev); // precevnt race cond
-  } catch (err) {
-    console.error("failed to update board", err);
+    try {
+      const { bestMove: i } = await getBestMove(aiColor);
+      if (i === -1) return; // no legal move
+      await setColor(i, aiColor);   
+      const data = await getBoard();
+      const parsed = data.board.flat().map(Number);
+      setSquares(parsed);
+      setBlackIsNext(prev => !prev); // prevent race cond
+    } catch (err) {
+      console.error("failed to update board", err);
+    }
   }
-}
-
 
   const rows = [];
   for (let row = 0; row < size; row++) {
@@ -148,8 +139,8 @@ async function handleAI() {
 export default function Game() {
   const [gameStarted, setGameStarted] = useState(false);
   const [size, setSize] = useState(3);
-  const [playerCol, setPlayerCol] = useState(false); //false is whiete, true is black
-  const [gameEnded, setGameEnded] = useState(0); // 0 is ongoing, 1 is black win, 2 is white win
+  const [playerCol, setPlayerCol] = useState(false); //false is white, true is black
+  const [gameEnded, setGameEnded] = useState(0); // 0 ongoing, BLACK (2) or WHITE (1) win
 
   if (!gameStarted) {
     return (
@@ -165,45 +156,71 @@ export default function Game() {
             max={19}
           />
         </label>
-        <br></br>
+        <br />
         <label>
           Be Black?&nbsp;
           <input
             type="checkbox"
-            checked = {playerCol}
-            onChange={(e) => setPlayerCol(!playerCol)}
+            checked={playerCol}
+            onChange={() => setPlayerCol(!playerCol)}
           />
         </label>
         <br />
         <button onClick={() => {
+          reset(size); // local init
+          setBoard(new Array(size * size).fill(0)); // keep your state in sync
+          setGameEnded(0);
           setGameStarted(true);
-          setBoard(Array(size * size).fill(0));
         }}>Start Game</button>
       </div>
     );
   }
 
-  if (gameEnded == BLACK) {
-    return <p>BLACK WON</p>;
+  if (gameEnded === BLACK) {
+    return <div><p>BLACK WON</p>
+      <button
+        onClick={async () => {
+          await setBoard(Array(size * size).fill(0));
+          setGameEnded(0);
+          setGameStarted(false);
+        }}
+      >
+        Go Back
+      </button>
+    </div>
   }
 
-  else if (gameEnded == WHITE) {
-    return <p>WHITE WON</p>;
+  if (gameEnded === WHITE) {
+    return <div><p>WHITE WON</p>
+      <button
+        onClick={async () => {
+          await setBoard(Array(size * size).fill(0));
+          setGameEnded(0);
+          setGameStarted(false);
+        }}
+      >
+        Go Back
+      </button>
+    </div>
   }
 
   // if player is black, ai is white (2)
   return <div>
-    <Board size={size} aiColor = {playerCol ? WHITE : BLACK} setGameEnded={setGameEnded}/> 
-    <br></br>
+    <Board
+      key={size} 
+      size={size}
+      aiColor={playerCol ? WHITE : BLACK}
+      setGameEnded={setGameEnded}
+    />
+    <br />
     <button
       onClick={async () => {
-      await setBoard(Array(size * size).fill(0));
-      setGameStarted(false);       
-    }}
+        await setBoard(Array(size * size).fill(0));
+        setGameEnded(0);
+        setGameStarted(false);
+      }}
     >
-    Go Back
+      Go Back
     </button>
-
   </div>
-  
 }
